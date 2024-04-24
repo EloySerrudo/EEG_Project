@@ -33,9 +33,9 @@ class HackEegTestApplication:
         self.max_samples = 5000
         self.read_samples_continuously = True
         self.continuous_mode = False
+        self.debug = False
 
-        print(f"platform: {sys.platform}")
-        # self.debug = True
+        print(f"Platform: {sys.platform}")
 
     def find_dropped_samples(self, samples, number_of_samples):
         sample_numbers = {self.get_sample_number(sample): 1 for sample in samples}
@@ -67,12 +67,10 @@ class HackEegTestApplication:
 
         gain_setting = GAINS[gain]
 
-        # self.hackeeg.disable_all_channels()<------EDITADO
-        self.channel_config_input(gain_setting)#<------EDITADO
-        # if self.channel_test:<------EDITADO
-        #     self.channel_config_test()
-        # else:
-        #     self.channel_config_input(gain_setting)
+        if self.channel_test:
+            self.channel_config_test()
+        else:
+            self.channel_config_input(gain_setting)
 
 
         # Route reference electrode to SRB1: JP8:1-2, JP7:NC (not connected)
@@ -86,26 +84,26 @@ class HackEegTestApplication:
         # Dual-ended mode
         # self.hackeeg.wreg(ads1299.MISC1, ads1299.MISC1_const)<------EDITADO
         # add channels into bias generation
-        self.hackeeg.wreg(ads1299.RLD_SENSP, ads1299.RLD2P)
-        self.hackeeg.wreg(ads1299.RLD_SENSN, ads1299.RLD2N)
-        RLD_conf = ads1299.CONFIG3_const | ads1299.PD_REFBUF | ads1299.RLDREF_INT | ads1299.PD_RLD
-        print(RLD_conf)
-        self.hackeeg.wreg(ads1299.CONFIG3, RLD_conf)
+        # self.hackeeg.wreg(ads1299.RLD_SENSP, ads1299.RLD2P)
+        # self.hackeeg.wreg(ads1299.RLD_SENSN, ads1299.RLD2N)
+        # RLD_conf = ads1299.CONFIG3_const | ads1299.PD_REFBUF | ads1299.RLDREF_INT | ads1299.PD_RLD
+        # self.hackeeg.wreg(ads1299.CONFIG3, RLD_conf)
 
         if messagepack:
             self.hackeeg.messagepack_mode()
+            print("Messagepack mode on")
         else:
             self.hackeeg.jsonlines_mode()
+            print("JSON Lines mode on")
         self.hackeeg.start()
         self.hackeeg.rdatac()
+
 
     def channel_config_input(self, gain_setting):
         # all channels enabled
         # for channel in range(1, 9):
         #     self.hackeeg.wreg(ads1299.CHnSET + channel, ads1299.TEST_SIGNAL | gain_setting )
 
-        # self.hackeeg.wreg(ads1299.CHnSET + 1, ads1299.INT_TEST_DC | gain_setting)
-        # self.hackeeg.wreg(ads1299.CHnSET + 6, ads1299.INT_TEST_DC | gain_setting)
         ##############
         mvdd = ads1299.ELECTRODE_INPUT | ads1299.ADS1298_GAIN_1X | ads1299.MVDD
         mvdd2 = ads1299.ELECTRODE_INPUT | ads1299.ADS1298_GAIN_2X | ads1299.MVDD
@@ -121,22 +119,16 @@ class HackEegTestApplication:
 
     def channel_config_test(self):
         # test_signal_mode = ads1299.INT_TEST_DC | ads1299.CONFIG2_const
-        test_signal_mode = ads1299.INT_TEST_4HZ | ads1299.CONFIG2_const
+        test_signal_mode = ads1299.INT_TEST_2HZ | ads1299.CONFIG2_const
         self.hackeeg.wreg(ads1299.CONFIG2, test_signal_mode)
-        self.hackeeg.wreg(ads1299.CHnSET + 1, ads1299.INT_TEST_DC | ads1299.GAIN_1X)
-        self.hackeeg.wreg(ads1299.CHnSET + 2, ads1299.SHORTED | ads1299.GAIN_1X)
-        self.hackeeg.wreg(ads1299.CHnSET + 3, ads1299.MVDD | ads1299.GAIN_1X)
-        self.hackeeg.wreg(ads1299.CHnSET + 4, ads1299.BIAS_DRN | ads1299.GAIN_1X)
-        self.hackeeg.wreg(ads1299.CHnSET + 5, ads1299.BIAS_DRP | ads1299.GAIN_1X)
-        self.hackeeg.wreg(ads1299.CHnSET + 6, ads1299.TEMP | ads1299.GAIN_1X)
-        self.hackeeg.wreg(ads1299.CHnSET + 7, ads1299.TEST_SIGNAL | ads1299.GAIN_1X)
+        self.hackeeg.wreg(ads1299.CHnSET + 1, ads1299.INT_TEST_DC | ads1299.ADS1298_GAIN_1X)
+        self.hackeeg.wreg(ads1299.CHnSET + 2, ads1299.SHORTED | ads1299.ADS1298_GAIN_1X)
+        self.hackeeg.wreg(ads1299.CHnSET + 3, ads1299.MVDD | ads1299.ADS1298_GAIN_1X)
+        self.hackeeg.wreg(ads1299.CHnSET + 4, ads1299.TEST_SIGNAL | ads1299.ADS1298_GAIN_1X)
+        self.hackeeg.wreg(ads1299.CHnSET + 5, ads1299.TEST_SIGNAL | ads1299.ADS1298_GAIN_8X)
+        self.hackeeg.wreg(ads1299.CHnSET + 6, ads1299.TEMP | ads1299.ADS1298_GAIN_1X)
+        self.hackeeg.wreg(ads1299.CHnSET + 7, ads1299.TEST_SIGNAL | ads1299.ADS1298_GAIN_12X)
         self.hackeeg.disable_channel(8)
-
-        # all channels enabled
-        # for channel in range(1, 9):
-        #     self.hackeeg.wreg(ads1299.CHnSET + channel, ads1299.TEST_SIGNAL | gain_setting )
-        pass
-
 
 
     def parse_args(self):
@@ -225,7 +217,7 @@ class HackEegTestApplication:
 
         samples = []
         sample_counter = 0
-
+        
         if self.continuous_mode:
             listener = keyboard.Listener(on_press=self.read_keyboard_input)
             listener.start()

@@ -120,13 +120,13 @@ void setup() {
   serialCommand.addCommand("rdata", rdataCommand);                 // Read one sample of data from each active channel
   serialCommand.addCommand("rreg", readRegisterCommand);           // Read ADS129x register, argument in hex, print contents in hex
   serialCommand.addCommand("wreg", writeRegisterCommand);          // Write ADS129x register, arguments in hex
-  serialCommand.addCommand("text", textCommand);                  // Sets the communication protocol to text
+  serialCommand.addCommand("text", textCommand);                   // Sets the communication protocol to text
   serialCommand.addCommand("jsonlines", jsonlinesCommand);         // Sets the communication protocol to JSONLines
   serialCommand.addCommand("messagepack", messagepackCommand);     // Sets the communication protocol to MessagePack
   serialCommand.addCommand("base64", base64ModeOnCommand);         // RDATA commands send base64 encoded data - default
   serialCommand.addCommand("hex", hexModeOnCommand);               // RDATA commands send hex encoded data
-  serialCommand.addCommand("help", helpCommand);                  // Print list of commands
-  serialCommand.setDefaultHandler(unrecognized);                  // Handler for any command that isn't matched
+  serialCommand.addCommand("help", helpCommand);                   // Print list of commands
+  serialCommand.setDefaultHandler(unrecognized);                   // Handler for any command that isn't matched
 
   // Setup callbacks for JsonCommand commands
   jsonCommand.addCommand("nop", nopCommand);                       // No operation (does nothing)
@@ -482,8 +482,12 @@ void stopCommand(unsigned char unused1, unsigned char unused2) {
 
 void rdataCommand(unsigned char unused1, unsigned char unused2) {
   using namespace ADS129x;
+  digitalWrite(PIN_START, HIGH);
   while (digitalRead(IPIN_DRDY) == HIGH);
-  adcSendCommandLeaveCsActive(RDATA);
+  digitalWrite(PIN_START, LOW);
+  //adcSendCommandLeaveCsActive(RDATA);
+  adcSendCommand(RDATA);
+  receive_sample();
   if (protocol_mode == TEXT_MODE) {
     send_response_ok();
   }
@@ -551,7 +555,9 @@ inline void send_samples(void) {
   if (spi_data_available) {
     spi_data_available = false;
     receive_sample();
-    send_sample();
+    if (sample_number_union.sample_number > 0)
+      send_sample();
+    sample_number_union.sample_number++;
   }
 }
 
@@ -572,7 +578,6 @@ inline void receive_sample() {
   uint8_t returnCode = spiRec(spi_bytes + TIMESTAMP_SIZE_IN_BYTES + SAMPLE_NUMBER_SIZE_IN_BYTES, num_spi_bytes);
 
   digitalWrite(PIN_CS, HIGH);
-  sample_number_union.sample_number++;
 }
 
 inline void send_sample(void) {
@@ -688,7 +693,7 @@ void adsSetup() {  //default settings for ADS1298 and compatible chips
   // All GPIO set to output 0x0000: (floating CMOS inputs can flicker on and off, creating noise)
   adcWreg(ADS129x::GPIO, 0);
   adcWreg(CONFIG3, PD_REFBUF | CONFIG3_const); // Enable Internal Reference
-  digitalWrite(PIN_START, HIGH);
+  // digitalWrite(PIN_START, HIGH);
   // Power-down and Short all Channels
   // for (uint8_t ch = 1; ch <= max_channels; ch++) {
   //   delayMicroseconds(1);
