@@ -79,12 +79,13 @@ class HackEegTestApplication:
 
         # Single-ended mode - setting SRB1 bit sends mid-supply voltage to the N inputs
         # use this with a signal generator
-        # self.hackeeg.wreg(ads1299.MISC1, ads1299.SRB1)<------EDITADO
+        #self.hackeeg.wreg(ads1299.MISC1, ads1299.SRB1)<------EDITADO
 
         # Dual-ended mode
-        # self.hackeeg.wreg(ads1299.MISC1, ads1299.MISC1_const)<------EDITADO
+        #self.hackeeg.wreg(ads1299.MISC1, ads1299.MISC1_const)<------EDITADO
         # add channels into bias generation
         # self.hackeeg.wreg(ads1299.RLD_SENSP, ads1299.RLD2P)
+        
         # self.hackeeg.wreg(ads1299.RLD_SENSN, ads1299.RLD2N)
         # RLD_conf = ads1299.CONFIG3_const | ads1299.PD_REFBUF | ads1299.RLDREF_INT | ads1299.PD_RLD
         # self.hackeeg.wreg(ads1299.CONFIG3, RLD_conf)
