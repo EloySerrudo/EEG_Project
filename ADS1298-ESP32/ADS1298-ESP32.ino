@@ -82,7 +82,7 @@ JsonCommand jsonCommand;
 
 // PWDN = 21
 // RESET = 22
-// START = 59
+// START = 17
 // DRDY = 16
 // MOSI = 23
 // MISO = 19

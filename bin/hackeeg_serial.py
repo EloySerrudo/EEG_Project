@@ -84,11 +84,11 @@ class HackEegTestApplication:
         # Dual-ended mode
         #self.hackeeg.wreg(ads1299.MISC1, ads1299.MISC1_const)<------EDITADO
         # add channels into bias generation
-        # self.hackeeg.wreg(ads1299.RLD_SENSP, ads1299.RLD2P)
+        self.hackeeg.wreg(ads1299.RLD_SENSP, ads1299.RLD2P)
         
-        # self.hackeeg.wreg(ads1299.RLD_SENSN, ads1299.RLD2N)
-        # RLD_conf = ads1299.CONFIG3_const | ads1299.PD_REFBUF | ads1299.RLDREF_INT | ads1299.PD_RLD
-        # self.hackeeg.wreg(ads1299.CONFIG3, RLD_conf)
+        self.hackeeg.wreg(ads1299.RLD_SENSN, ads1299.RLD2N)
+        RLD_conf = ads1299.CONFIG3_const | ads1299.PD_REFBUF | ads1299.RLDREF_INT | ads1299.PD_RLD
+        self.hackeeg.wreg(ads1299.CONFIG3, RLD_conf)
 
         if messagepack:
             self.hackeeg.messagepack_mode()
