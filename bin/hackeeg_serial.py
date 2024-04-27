@@ -109,9 +109,9 @@ class HackEegTestApplication:
         mvdd = ads1299.ELECTRODE_INPUT | ads1299.ADS1298_GAIN_1X | ads1299.MVDD
         mvdd2 = ads1299.ELECTRODE_INPUT | ads1299.ADS1298_GAIN_2X | ads1299.MVDD
         ##############
-        self.hackeeg.wreg(ads1299.CHnSET + 1, mvdd)
+        self.hackeeg.wreg(ads1299.CHnSET + 1, ads1299.ELECTRODE_INPUT | gain_setting)
         self.hackeeg.wreg(ads1299.CHnSET + 2, ads1299.ELECTRODE_INPUT | gain_setting)
-        self.hackeeg.wreg(ads1299.CHnSET + 3, mvdd)
+        self.hackeeg.wreg(ads1299.CHnSET + 3, ads1299.ELECTRODE_INPUT | gain_setting)
         self.hackeeg.wreg(ads1299.CHnSET + 4, mvdd2)
         self.hackeeg.wreg(ads1299.CHnSET + 5, mvdd)
         self.hackeeg.wreg(ads1299.CHnSET + 6, mvdd)
