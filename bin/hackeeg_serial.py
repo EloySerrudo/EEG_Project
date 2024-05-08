@@ -1,6 +1,7 @@
 import argparse
 import time
 import sys
+import winsound
 import pandas as pd
 
 import hackeeg
@@ -84,9 +85,14 @@ class HackEegTestApplication:
         # Dual-ended mode
         #self.hackeeg.wreg(ads1299.MISC1, ads1299.MISC1_const)<------EDITADO
         # add channels into bias generation
+        self.hackeeg.wreg(ads1299.RLD_SENSP, ads1299.RLD1P)
         self.hackeeg.wreg(ads1299.RLD_SENSP, ads1299.RLD2P)
-        
+        self.hackeeg.wreg(ads1299.RLD_SENSP, ads1299.RLD3P)
+        self.hackeeg.wreg(ads1299.RLD_SENSP, ads1299.RLD4P)
+        self.hackeeg.wreg(ads1299.RLD_SENSN, ads1299.RLD1N)
         self.hackeeg.wreg(ads1299.RLD_SENSN, ads1299.RLD2N)
+        self.hackeeg.wreg(ads1299.RLD_SENSN, ads1299.RLD3N)
+        self.hackeeg.wreg(ads1299.RLD_SENSN, ads1299.RLD4N)
         RLD_conf = ads1299.CONFIG3_const | ads1299.PD_REFBUF | ads1299.RLDREF_INT | ads1299.PD_RLD
         self.hackeeg.wreg(ads1299.CONFIG3, RLD_conf)
 
@@ -107,12 +113,11 @@ class HackEegTestApplication:
 
         ##############
         mvdd = ads1299.ELECTRODE_INPUT | ads1299.ADS1298_GAIN_1X | ads1299.MVDD
-        mvdd2 = ads1299.ELECTRODE_INPUT | ads1299.ADS1298_GAIN_2X | ads1299.MVDD
         ##############
         self.hackeeg.wreg(ads1299.CHnSET + 1, ads1299.ELECTRODE_INPUT | gain_setting)
         self.hackeeg.wreg(ads1299.CHnSET + 2, ads1299.ELECTRODE_INPUT | gain_setting)
         self.hackeeg.wreg(ads1299.CHnSET + 3, ads1299.ELECTRODE_INPUT | gain_setting)
-        self.hackeeg.wreg(ads1299.CHnSET + 4, mvdd2)
+        self.hackeeg.wreg(ads1299.CHnSET + 4, ads1299.ELECTRODE_INPUT | gain_setting)
         self.hackeeg.wreg(ads1299.CHnSET + 5, mvdd)
         self.hackeeg.wreg(ads1299.CHnSET + 6, mvdd)
         self.hackeeg.wreg(ads1299.CHnSET + 7, mvdd)
@@ -235,6 +240,7 @@ class HackEegTestApplication:
         duration = end_time - start_time
         self.hackeeg.stop_and_sdatac_messagepack()
         self.hackeeg.blink_board_led()
+        winsound.Beep(frequency=2500, duration=2000)
         time.sleep(1)
         self.hackeeg.close()
 

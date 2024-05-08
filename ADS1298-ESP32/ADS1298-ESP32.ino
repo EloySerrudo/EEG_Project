@@ -5,6 +5,8 @@
 #include "ads129x.h"
 #include "SerialCommand.h"
 #include "JsonCommand.h"
+#include "base64.h"
+#include "Base64.h"
 #include "SpiDma.h"
 
 
@@ -33,7 +35,7 @@ const char *STATUS_TEXT_NO_ACTIVE_CHANNELS = "No Active Channels";
 int protocol_mode = TEXT_MODE;
 int max_channels = 0;
 int num_active_channels = 0;
-bool active_channels[9];  // reports whether channels 1..9 are active
+bool active_channels[9];  // reports whether channels 1..8 are active
 int num_spi_bytes = 0;
 int num_timestamped_spi_bytes = 0;
 bool is_rdatac = false;
@@ -65,21 +67,6 @@ volatile bool spi_data_available;
 // char buffer to send via USB
 char output_buffer[OUTPUT_BUFFER_SIZE];
 
-const uint8_t PIN_LED = 4;
-const char *hardware_type = "unknown";
-const char *board_name = "MyEEG";
-const char *maker_name = "Eloy";
-const char *driver_version = "v0.0.1";
-
-const char *json_rdatac_header = "{\"C\":200,\"D\":\"";
-const char *json_rdatac_footer = "\"}";
-
-uint8_t messagepack_rdatac_header[] = { 0x82, 0xa1, 0x43, 0xcc, 0xc8, 0xa1, 0x44, 0xc4 };
-size_t messagepack_rdatac_header_size = sizeof(messagepack_rdatac_header);
-
-SerialCommand serialCommand;
-JsonCommand jsonCommand;
-
 // PWDN = 21
 // RESET = 22
 // START = 17
@@ -89,6 +76,21 @@ JsonCommand jsonCommand;
 // CLK = 18
 // CS = 5
 // LED 4
+
+const uint8_t PIN_LED = 4;
+const char *hardware_type = "unknown";
+const char *board_name = "MyEEG";
+const char *maker_name = "Eloy";
+const char *driver_version = "v0.2.0";
+
+const char *json_rdatac_header = "{\"C\":200,\"D\":\"";
+const char *json_rdatac_footer = "\"}";
+
+uint8_t messagepack_rdatac_header[] = { 0x82, 0xa1, 0x43, 0xcc, 0xc8, 0xa1, 0x44, 0xc4 };
+size_t messagepack_rdatac_header_size = sizeof(messagepack_rdatac_header);
+
+SerialCommand serialCommand;
+JsonCommand jsonCommand;
 
 void setup() {
   // put your setup code here, to run once:
@@ -621,7 +623,7 @@ inline void send_sample_messagepack(int num_bytes) {
 
 void arduinoSetup() {
   using namespace ADS129x;
-  // prepare pins to be outputs or inputs en adsCommand.h
+  // Prepare pins to be outputs or inputs en adsCommand.h
   pinMode(PIN_START, OUTPUT);
   pinMode(IPIN_DRDY, INPUT);
   // pinMode(PIN_CLKSEL, OUTPUT);// *optional DVDD en OpenBCI
@@ -635,7 +637,7 @@ void arduinoSetup() {
   digitalWrite(IPIN_PWDN, HIGH);  // *optional - turn off power down mode
   digitalWrite(IPIN_RESET, HIGH);
   //wait for the ads129n to be ready - it can take a while to charge caps
-  delay(5000);  // 100ms delay for power-on-reset (Datasheet, pg. 48)
+  delay(100);  // 100ms delay for power-on-reset (Datasheet, pg. 48)
   // reset pulse
   digitalWrite(IPIN_RESET, LOW);
   delayMicroseconds(6);  // Wait for 2 tCLKs Internal CLK=2048MHz->0.488us
