@@ -5,8 +5,7 @@
 #include "ads129x.h"
 #include "SerialCommand.h"
 #include "JsonCommand.h"
-#include "base64.h"
-#include "Base64.h"
+#include "Bases64.h"
 #include "SpiDma.h"
 
 
@@ -42,9 +41,6 @@ bool is_rdatac = false;
 bool base64_mode = true;
 
 char hexDigits[] = "0123456789ABCDEF";
-const char b64_alphabets[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                             "abcdefghijklmnopqrstuvwxyz"
-                             "0123456789+/";
 
 // microseconds timestamp
 #define TIMESTAMP_SIZE_IN_BYTES 4
@@ -81,7 +77,8 @@ const uint8_t PIN_LED = 4;
 const char *hardware_type = "unknown";
 const char *board_name = "MyEEG";
 const char *maker_name = "Eloy";
-const char *driver_version = "v0.2.0";
+const char *driver_version = "v0.3.0";
+const char *protocol_modes[] = {"TEXT_MODE", "JSONLINES_MODE", "MESSAGEPACK_MODE"};
 
 const char *json_rdatac_header = "{\"C\":200,\"D\":\"";
 const char *json_rdatac_footer = "\"}";
@@ -128,6 +125,7 @@ void setup() {
   serialCommand.addCommand("base64", base64ModeOnCommand);         // RDATA commands send base64 encoded data - default
   serialCommand.addCommand("hex", hexModeOnCommand);               // RDATA commands send hex encoded data
   serialCommand.addCommand("help", helpCommand);                   // Print list of commands
+  serialCommand.addCommand("protocol", protocolCommand); // <------EDITADO
   serialCommand.setDefaultHandler(unrecognized);                   // Handler for any command that isn't matched
 
   // Setup callbacks for JsonCommand commands
@@ -151,6 +149,7 @@ void setup() {
   jsonCommand.addCommand("text", textCommand);                     // Sets the communication protocol to text
   jsonCommand.addCommand("jsonlines", jsonlinesCommand);           // Sets the communication protocol to JSONLines
   jsonCommand.addCommand("messagepack", messagepackCommand);       // Sets the communication protocol to MessagePack
+  jsonCommand.addCommand("protocol", protocolCommand); // <------EDITADO
   jsonCommand.setDefaultHandler(unrecognizedJsonLines);            // Handler for any command that isn't matched
 
   Serial.println("Ready");
@@ -229,6 +228,10 @@ void send_response(int status_code, const char *status_text) {
       // unknown protocol
       ;
   }
+}
+
+void protocolCommand(unsigned char unused1, unsigned char unused2) { // <------EDITADO
+  send_response(RESPONSE_OK, protocol_modes[protocol_mode]);
 }
 
 void versionCommand(unsigned char unused1, unsigned char unused2) {
@@ -586,14 +589,14 @@ inline void send_sample(void) {
   switch (protocol_mode) {
     case JSONLINES_MODE:
       Serial.write(json_rdatac_header);
-      base64_encodes(output_buffer, (char *)spi_bytes, num_timestamped_spi_bytes);
+      base64_encode(output_buffer, (char *)spi_bytes, num_timestamped_spi_bytes);
       Serial.write(output_buffer);
       Serial.write(json_rdatac_footer);
       Serial.write("\n");
       break;
     case TEXT_MODE:
       if (base64_mode) {
-        base64_encodes(output_buffer, (char *)spi_bytes, num_timestamped_spi_bytes);
+        base64_encode(output_buffer, (char *)spi_bytes, num_timestamped_spi_bytes);
       } else {
         encode_hex(output_buffer, (char *)spi_bytes, num_timestamped_spi_bytes);
       }
@@ -651,7 +654,7 @@ void adsSetup() {  //default settings for ADS1298 and compatible chips
   spi_data_available = false;
   attachInterrupt(digitalPinToInterrupt(IPIN_DRDY), drdy_interrupt, FALLING);
   adcSendCommand(SDATAC);
-  delay(100);  //pause to provide ads129n enough time to boot up...
+  delay(200);  //pause to provide ads129n enough time to boot up...
   // delayMicroseconds(2);
   uint8_t val = adcRreg(ID);
   switch (val & B00011111) {
@@ -695,57 +698,5 @@ void adsSetup() {  //default settings for ADS1298 and compatible chips
   // All GPIO set to output 0x0000: (floating CMOS inputs can flicker on and off, creating noise)
   adcWreg(ADS129x::GPIO, 0);
   adcWreg(CONFIG3, PD_REFBUF | CONFIG3_const); // Enable Internal Reference
-  // digitalWrite(PIN_START, HIGH);
-  // Power-down and Short all Channels
-  // for (uint8_t ch = 1; ch <= max_channels; ch++) {
-  //   delayMicroseconds(1);
-  //   adcWreg(CHnSET + ch, PDn | SHORTED);
-  // }
-}
-
-/*******************Base64.h CODES*******************************/
-
-int base64_encodes(char *output, char *input, int inputLen) {
-  int i = 0, j = 0;
-  int encLen = 0;
-  unsigned char a3[3];
-  unsigned char a4[4];
-
-  while (inputLen--) {
-    a3[i++] = *(input++);
-    if (i == 3) {
-      a3_to_a4s(a4, a3);
-
-      for (i = 0; i < 4; i++) {
-        output[encLen++] = b64_alphabets[a4[i]];
-      }
-
-      i = 0;
-    }
-  }
-
-  if (i) {
-    for (j = i; j < 3; j++) {
-      a3[j] = '\0';
-    }
-
-    a3_to_a4s(a4, a3);
-
-    for (j = 0; j < i + 1; j++) {
-      output[encLen++] = b64_alphabets[a4[j]];
-    }
-
-    while ((i++ < 3)) {
-      output[encLen++] = '=';
-    }
-  }
-  output[encLen] = '\0';
-  return encLen;
-}
-
-void a3_to_a4s(unsigned char *a4, unsigned char *a3) {
-  a4[0] = (a3[0] & 0xfc) >> 2;
-  a4[1] = ((a3[0] & 0x03) << 4) + ((a3[1] & 0xf0) >> 4);
-  a4[2] = ((a3[1] & 0x0f) << 2) + ((a3[2] & 0xc0) >> 6);
-  a4[3] = (a3[2] & 0x3f);
+  // digitalWrite(PIN_START, HIGH); // <------EDITADO
 }
